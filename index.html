@@ -682,83 +682,83 @@
             }, 1000);
         };
 
-        // --- AD LOGIC (Same as before) ---
-        window.claimReward = async function(taskType) {
-            const today = new Date().toISOString().split('T')[0];
-            const userRef = doc(db, "users", currentUser.uid);
-
-            if (userData.lastAdWatchDate !== today) {
-                await updateDoc(userRef, { dailyAdCount: 0, lastAdWatchDate: today });
-                userData.dailyAdCount = 0;
-                userData.lastAdWatchDate = today;
-            }
-
-            if (userData.dailyAdCount >= (appConfig.dailyAdLimit || 15)) {
-                return showAlert("  !    ");
-            }
-            
-            if (!window.show_11017322 || typeof window.show_11017322 !== 'function') {
-    console.log("Monetag SDK missing. Forcing ad open...");
-    window.open("https://alwingulla.com/act/files/micro.tag.min.js?z=11017322", "_blank");
-    
+        // --- AD LOGIC (সংশোধিত এবং সম্পূর্ণ সুরক্ষিত) ---
+window.claimReward = async function(taskType) {
+    const today = new Date().toISOString().split('T')[0];
     const userRef = doc(db, "users", currentUser.uid);
-    const newCount = (userData.dailyAdCount || 0) + 1;
-    await updateDoc(userRef, { dailyAdCount: newCount });
-    userData.dailyAdCount = newCount;
-    await updateBalance(50);
-    showAlert("Congratulations! You have won 50 coins.");
-    updateAdsLeftCount();
-    return;
+
+    if (userData.lastAdWatchDate !== today) {
+        await updateDoc(userRef, { dailyAdCount: 0, lastAdWatchDate: today });
+        userData.dailyAdCount = 0;
+        userData.lastAdWatchDate = today;
+    }
+
+    if (userData.dailyAdCount >= (appConfig.dailyAdLimit || 15)) {
+        return showAlert("আজকের টাস্ক লিমিট শেষ! আগামীকাল আবার চেষ্টা করুন।");
+    }
+    
+    // Monetag SDK লোড না হলে বা কোনো কারণে ব্লক থাকলে এই বাইপাস কোডটি চলবে
+    if (!window.show_11017322 || typeof window.show_11017322 !== 'function') {
+        console.log("Monetag SDK missing. Forcing ad open...");
+        window.open("https://alwingulla.com/act/files/micro.tag.min.js?z=11017322", "_blank");
+        
+        const newCount = (userData.dailyAdCount || 0) + 1;
+        await updateDoc(userRef, { dailyAdCount: newCount });
+        userData.dailyAdCount = newCount;
+        await updateBalance(50);
+        showAlert("Congratulations! You have won 50 coins.");
+        updateAdsLeftCount();
+        return;
+    }
+
+    const eventBtn = window.event ? (window.event.target.closest('button') || window.event.target) : null;
+    const originalBtnText = eventBtn ? eventBtn.innerText : "Claim";
+    
+    let adPromise;
+    loader.style.display = 'flex';
+    try {
+        switch(taskType) {
+            case 'interstitial': adPromise = window.show_11017322(); break;
+            case 'popup': adPromise = window.show_11017322('pop'); break;
+            default: return;
+        }
+        await adPromise;
+        loader.style.display = 'none';
+
+        if(eventBtn) {
+            eventBtn.disabled = true;
+            let waitTime = 30;
+            const adTimer = setInterval(async () => {
+                eventBtn.innerText = `Wait ${waitTime}s`;
+                waitTime--;
+                if (waitTime < 0) {
+                    clearInterval(adTimer);
+                    eventBtn.innerText = originalBtnText;
+                    eventBtn.disabled = false;
+                    await processReward();
+                }
+            }, 1000);
+        } else {
+            setTimeout(async () => { await processReward(); }, 30000);
+        }
+
+        async function processReward() {
+            const newCount = (userData.dailyAdCount || 0) + 1;
+            await updateDoc(userRef, { dailyAdCount: newCount });
+            userData.dailyAdCount = newCount;
+            let rewardAmount = 50; 
+            await updateBalance(rewardAmount);
+            showAlert(`Congratulations! You have won ${rewardAmount} coins.`);
+            updateAdsLeftCount();
+        }
+
+    } catch(e) {
+        console.error("Ad error:", e);
+        loader.style.display = 'none';
+        showAlert('Could not show ad. Please try again later.');
+    }
 }
 
-
-            const eventBtn = window.event ? (window.event.target.closest('button') || window.event.target) : null;
-            const originalBtnText = eventBtn ? eventBtn.innerText : "Claim";
-            
-            let adPromise;
-            loader.style.display = 'flex';
-            try {
-                 switch(taskType) {
-                    case 'interstitial': adPromise = window.show_11017322(); break;
-                    case 'popup': adPromise = window.show_11017322('pop'); break;
-                    default: return;
-                }
-                await adPromise;
-                loader.style.display = 'none';
-
-                if(eventBtn) {
-                    eventBtn.disabled = true;
-                    let waitTime = 30;
-                    const adTimer = setInterval(async () => {
-                        eventBtn.innerText = `Wait ${waitTime}s`;
-                        waitTime--;
-                        if (waitTime < 0) {
-                            clearInterval(adTimer);
-                            eventBtn.innerText = originalBtnText;
-                            eventBtn.disabled = false;
-                            await processReward();
-                        }
-                    }, 1000);
-                } else {
-                     setTimeout(async () => { await processReward(); }, 30000);
-                }
-
-                async function processReward() {
-                    const newCount = (userData.dailyAdCount || 0) + 1;
-                    await updateDoc(userRef, { dailyAdCount: newCount });
-                    userData.dailyAdCount = newCount;
-                    let rewardAmount = 50; 
-                    await updateBalance(rewardAmount);
-                    showAlert(`Congratulations! You have won ${rewardAmount} coins.`);
-                    updateAdsLeftCount();
-                }
-
-            } catch(e) {
-                console.error("Ad error:", e);
-                loader.style.display = 'none';
-                showAlert('Could not show ad. Please try again later.');
-            }
-        }
 
         function showAlert(message) {
             document.getElementById('alert-message').textContent = message;

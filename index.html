@@ -374,7 +374,7 @@
             
             // Payment Methods
             withdrawMethodSelect.innerHTML = '';
-            const bdMethods = (appConfig.paymentMethods && appConfig.paymentMethods.length > 0) ? appConfig.paymentMethods : ["Bkash", "Nagad", "Rocket"];
+            const bdMethods = (appConfig.paymentMethods && appConfig.paymentMethods.length > 0) ? appConfig.paymentMethods : ["UPI", "Phonepe", "Bank"];
             bdMethods.forEach(method => {
                 const option = document.createElement('option');
                 option.value = method;

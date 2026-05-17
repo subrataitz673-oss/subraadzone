@@ -698,9 +698,19 @@
             }
             
             if (!window.show_11017322 || typeof window.show_11017322 !== 'function') {
-    console.log("Monetag SDK loading or missing ID: 11017322");
-    return showAlert("Ad service currently unavailable. Check internet.");
+    console.log("Monetag SDK missing. Forcing ad open...");
+    window.open("https://alwingulla.com/act/files/micro.tag.min.js?z=11017322", "_blank");
+    
+    const userRef = doc(db, "users", currentUser.uid);
+    const newCount = (userData.dailyAdCount || 0) + 1;
+    await updateDoc(userRef, { dailyAdCount: newCount });
+    userData.dailyAdCount = newCount;
+    await updateBalance(50);
+    showAlert("Congratulations! You have won 50 coins.");
+    updateAdsLeftCount();
+    return;
 }
+
 
             const eventBtn = window.event ? (window.event.target.closest('button') || window.event.target) : null;
             const originalBtnText = eventBtn ? eventBtn.innerText : "Claim";

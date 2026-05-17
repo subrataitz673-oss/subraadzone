@@ -697,9 +697,10 @@
                 return showAlert("  !    ");
             }
             
-            if (typeof window.show_11017322 !== 'function') {
-                return showAlert("Ad service currently unavailable. Check internet.");
-            }
+            if (!window.show_11017322 || typeof window.show_11017322 !== 'function') {
+    console.log("Monetag SDK loading or missing ID: 11017322");
+    return showAlert("Ad service currently unavailable. Check internet.");
+}
 
             const eventBtn = window.event ? (window.event.target.closest('button') || window.event.target) : null;
             const originalBtnText = eventBtn ? eventBtn.innerText : "Claim";
